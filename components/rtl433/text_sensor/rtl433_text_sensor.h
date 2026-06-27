@@ -17,7 +17,7 @@ class Rtl433TextSensor : public text_sensor::TextSensor, public Rtl433Listener {
       return;
     if (root["model"].as<std::string>() != sensor_device_model_)
       return;
-    if (!device_id_.empty()) {
+    if (!sensor_device_id_.empty()) {
       if (!root.containsKey("id"))
         return;
       if (root["id"].as<std::string>() != sensor_device_id_)

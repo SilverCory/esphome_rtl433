@@ -8,30 +8,30 @@ namespace rtl433 {
 
 class Rtl433Sensor : public sensor::Sensor, public Rtl433Listener {
  public:
-  void set_device_model(const std::string &model) { device_model_ = model; }
-  void set_device_id(const std::string &id) { device_id_ = id; }
-  void set_field(const std::string &field) { field_ = field; }
+  void set_sensor_device_model(const std::string &model) { sensor_device_model_ = model; }
+  void set_sensor_device_id(const std::string &id) { sensor_device_id_ = id; }
+  void set_sensor_field(const std::string &field) { sensor_field_ = field; }
 
   void on_message(JsonObject root) override {
     if (!root.containsKey("model"))
       return;
-    if (root["model"].as<std::string>() != device_model_)
+    if (root["model"].as<std::string>() != sensor_device_model_)
       return;
     if (!device_id_.empty()) {
       if (!root.containsKey("id"))
         return;
-      if (root["id"].as<std::string>() != device_id_)
+      if (root["id"].as<std::string>() != sensor_device_id_)
         return;
     }
-    if (!root.containsKey(field_))
+    if (!root.containsKey(sensor_field_))
       return;
-    publish_state(root[field_].as<float>());
+    publish_state(root[sensor_field_].as<float>());
   }
 
  private:
-  std::string device_model_;
-  std::string device_id_;
-  std::string field_;
+  std::string sensor_device_model_;
+  std::string sensor_device_id_;
+  std::string sensor_field_;
 };
 
 }  // namespace rtl433

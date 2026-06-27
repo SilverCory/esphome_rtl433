@@ -2,6 +2,7 @@
 
 An [ESPHome](https://esphome.io/) external component that turns an ESP32 + CC1101 RF transceiver into a 433 MHz sensor gateway. Decoded messages from weather stations, door/window sensors, tire-pressure monitors, and hundreds of other devices are delivered through ESPHome's native automation system -- no MQTT broker required.
 
+
 Under the hood the component wraps [rtl_433_ESP](https://github.com/NorthernMan54/rtl_433_ESP), which is a port of the widely-used [rtl_433](https://github.com/merbanan/rtl_433) project.
 
 ## Features

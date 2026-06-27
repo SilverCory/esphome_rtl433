@@ -1,0 +1,135 @@
+esphome:
+  name: rtl433-gateway
+  friendly_name: RTL433 Gateway
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+# CC1101 wiring (adjust GPIO numbers to match your board):
+#
+#   CC1101   ESP32
+#   ───────  ─────
+#   VCC      3.3V
+#   GND      GND
+#   CSN      GPIO5   (cs_pin)
+#   SCK      GPIO18  (clk_pin)
+#   MOSI     GPIO23  (mosi_pin)
+#   MISO     GPIO19  (miso_pin)
+#   GDO0     GPIO13  (gdo0_pin) ← interrupt / data line
+#   GDO2     GPIO4   (gdo2_pin) ← optional; not used at runtime
+
+rtl433:
+  cs_pin: 5
+  gdo0_pin: 13
+  # gdo2_pin: 4                    # Optional -- not used at runtime; defaults to RADIOLIB_NC
+  clk_pin: 18
+  miso_pin: 19
+  mosi_pin: 23
+  frequency: 433.92
+  # modulation: FSK                 # Optional -- default OOK; set FSK for TPMS / FSK devices
+
+  # -- RSSI & signal detection --
+  # min_rssi: -82                   # Minimum RSSI in dBm; weaker signals are discarded (default -82)
+  # rssi_threshold_delta: 9         # Delta added to average RSSI to detect signal presence (default 9)
+  # rssi_samples: 50000             # Number of RSSI samples for background average (default 50000)
+  # auto_rssi_threshold: true       # Auto-adjust RSSI threshold from background noise (default true)
+
+  # -- Unparsed signals --
+  # publish_unparsed: false          # Fire on_message for signals that could not be decoded (default false)
+
+  # -- Debug verbosity --
+  # rtl_debug: 0                    # rtl_433 decoder verbosity 0-4 (default 0)
+
+  # -- CC1101 workaround --
+  # deaf_workaround: true           # Hourly re-init to fix CC1101 going deaf (default true)
+
+  # -- Startup diagnostics --
+  # log_module_status: false        # Log SPI and transceiver config at boot (default false)
+
+  # -- Verbose debug flags (all default false) --
+  # raw_signal_debug: false         # Log raw received signal data
+  # memory_debug: false             # Log heap usage at key points
+  # demod_debug: false              # Log demodulation details
+  # signal_rssi: false              # Track per-pulse RSSI values
+  # stack_debug: false              # Log FreeRTOS stack high-water marks
+
+  on_message:
+    - lambda: |-
+        ESP_LOGI("rtl433", "raw json: %s", x.c_str());
+
+# ============================================================
+# Native sensor platforms (recommended)
+# ============================================================
+# Declare sensors directly -- no lambda or json: component needed.
+# The rtl433 component auto-loads the json dependency.
+
+# Numeric sensor: reads a float field from decoded JSON.
+# field: must match a JSON key from the decoded message (e.g. temperature_C, humidity).
+# Use on_message with a log lambda to discover available field names for your device.
+sensor:
+  - platform: rtl433
+    name: "Outdoor Temperature"
+    device_model: "Acurite-606TX"       # Must exactly match the "model" value in decoded JSON
+    # device_id: "1234"                 # Optional -- omit to accept any device of this model
+    # rtl433_id: rtl433_component       # Optional -- only needed with multiple rtl433 instances
+    field: temperature_C                # JSON key to read the numeric value from
+    unit_of_measurement: "C"
+    device_class: temperature
+    accuracy_decimals: 1
+
+# Text sensor: reads a string field from decoded JSON.
+# Useful for model names, device IDs, or any non-numeric value.
+text_sensor:
+  - platform: rtl433
+    name: "Last Device Model"
+    device_model: "Acurite-606TX"
+    field: model                        # Publishes the "model" JSON value as a string
+
+# Binary sensor: maps a truthy JSON field to ON/OFF.
+# Non-zero numbers, non-empty strings, and true booleans are treated as ON.
+binary_sensor:
+  - platform: rtl433
+    name: "Acurite Battery OK"
+    device_model: "Acurite-606TX"
+    field: battery_ok                   # 1 = ON (battery good), 0 = OFF (battery low)
+    device_class: battery
+
+# ============================================================
+# Legacy on_message lambda (still supported)
+# ============================================================
+# You can still use on_message for advanced logic. The native
+# sensor platforms above and on_message work side by side.
+#
+# json:                               # Only needed if you parse JSON in lambdas
+#
+# sensor:
+#   - platform: template
+#     name: "Outdoor Temperature"
+#     id: outdoor_temp
+#     unit_of_measurement: "C"
+#
+# Then in on_message:
+#   json::parse_json(x, [](JsonObject root) -> bool {
+#     if (root["model"] == "Acurite-606TX") {
+#       id(outdoor_temp).publish_state(root["temperature_C"].as<float>());
+#     }
+#     return true;
+#   });

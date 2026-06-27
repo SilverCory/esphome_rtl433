@@ -32,8 +32,8 @@ CONFIG_SCHEMA = (
 async def to_code(config):
     var = await sensor.new_sensor(config)
     parent = await cg.get_variable(config[CONF_RTL433_ID])
-    cg.add(var.set_device_model(config[CONF_SENSOR_DEVICE_MODEL]))
+    cg.add(var.set_sensor_device_model(config[CONF_SENSOR_DEVICE_MODEL]))
     if CONF_SENSOR_DEVICE_ID in config:
-        cg.add(var.set_device_id(config[CONF_SENSOR_DEVICE_ID]))
-    cg.add(var.set_field(config[CONF_SENSOR_FIELD]))
+        cg.add(var.set_sensor_device_id(config[CONF_SENSOR_DEVICE_ID]))
+    cg.add(var.set_sensor_field(config[CONF_SENSOR_FIELD]))
     cg.add(parent.register_listener(var))
